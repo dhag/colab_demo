@@ -22,7 +22,7 @@ gemini_colab_quickstart.ipynb
 ## Web sock
 WS_echo_server_colab_ngrok.ipynb
 
-## ライン
+## WEB Hook
 line_webhook_colab.ipynb
 
 line_dummy_image_colab.ipynb
@@ -32,7 +32,7 @@ line_gemini_image_colab.ipynb
 
 
 ## CNN
-HaGRID_CNN_feature_map_kyozai_(1).ipynb
+HaGRID_CNN_feature_map_kyozai.ipynb
 
 
 
