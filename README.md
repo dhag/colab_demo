@@ -15,6 +15,10 @@ Flask+ngrokの例.ipynb
 
 HTTP_flask_browser_ngrok.ipynb
 
+## API
+gemini_colab_quickstart.ipynb
+
+
 ## Web sock
 WS_echo_server_colab_ngrok.ipynb
 
