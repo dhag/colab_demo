@@ -6,7 +6,7 @@ HaGRID_CNN_feature_map_kyozai_(1).ipynb
 
 TCP_server_receiver_ngrok.ipynb
 
-tcp_client_sender.ipynb
+Tcp_client_sender.ipynb
 
 UDP_image_demo.ipynb
 
