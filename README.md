@@ -22,6 +22,9 @@ gemini_colab_quickstart.ipynb
 ## Web sock
 WS_echo_server_colab_ngrok.ipynb
 
+websocket_chat_colab.ipynb
+
+
 ## Web hook
 line_webhook_colab.ipynb
 
