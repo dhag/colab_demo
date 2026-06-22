@@ -3,12 +3,17 @@
 
 
 ## UDP
+画像データを送受信する。自分自身で送受信。
 UDP_image_demo.ipynb
+テキストデータを受信する。pinggyでブリッジ。
+UDP_text_reciever.ipynb
+テキストデータを送信する。
 UDP_text_sender.ipynb
 
 ## TCP
+画像データを受信するサーバ。ngrokでブリッジ
 TCP_server_receiver_ngrok.ipynb
-
+画像データを送信するクライアント。ngrokでブリッジ
 Tcp_client_sender.ipynb
 
 
