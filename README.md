@@ -55,7 +55,7 @@ line_webhook_colab.ipynb
 
 line_dummy_image_colab.ipynb
 
-ラインのWeb hook。gemini。
+ラインのWeb hook。geminiによる画像生成（有償版じゃないとダメかもね）。
 
 line_gemini_image_colab.ipynb
 
