@@ -27,7 +27,11 @@ Tcp_client_sender.ipynb
 
 
 ## HTTP
+ごく簡単なHTTPサーバ。ngrokでブリッジ
+
 Flask+ngrokの例.ipynb
+
+画像をアップロードして処理したものを受け取る簡単なHTTPサーバ。ngrokでブリッジ
 
 HTTP_flask_browser_ngrok.ipynb
 
