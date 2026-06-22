@@ -36,20 +36,26 @@ Flask+ngrokの例.ipynb
 HTTP_flask_browser_ngrok.ipynb
 
 ## API
+GeminiのAPIを使うサンプル。他社もほぼ同等（だが無料枠がないものが多い） 
 gemini_colab_quickstart.ipynb
 
 
 ## Web sock
+ごく簡単なエコーサーバ
 WS_echo_server_colab_ngrok.ipynb
-
+チャット
 websocket_chat_colab.ipynb
 
-
 ## Web hook
+ラインのWeb hook
+
 line_webhook_colab.ipynb
+
+ラインのWeb hook。画像を扱える
 
 line_dummy_image_colab.ipynb
 
+ラインのWeb hook。gemini。
 line_gemini_image_colab.ipynb
 
 
