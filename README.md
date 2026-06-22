@@ -4,6 +4,8 @@
 
 ## UDP
 UDP_image_demo.ipynb
+UDP_text_sender.ipynb
+
 ## TCP
 TCP_server_receiver_ngrok.ipynb
 
