@@ -29,15 +29,16 @@ Tcp_client_sender.ipynb
 ## HTTP
 ごく簡単なHTTPサーバ。ngrokでブリッジ
 
-Flask+ngrokの例.ipynb
+***Flask+ngrokの例.ipynb***
 
 画像をアップロードして処理したものを受け取る簡単なHTTPサーバ。ngrokでブリッジ
 
-HTTP_flask_browser_ngrok.ipynb
+***HTTP_flask_browser_ngrok.ipynb***
 
 ## API
-GeminiのAPIを使うサンプル。他社もほぼ同等（だが無料枠がないものが多い） 
-gemini_colab_quickstart.ipynb
+GeminiのAPIを使うサンプル。他社もほぼ同等（だが無料枠がないものが多い）
+
+***gemini_colab_quickstart.ipynb***
 
 
 ## Web sock
