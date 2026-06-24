@@ -5,7 +5,7 @@
 ## UDP
 画像データを送受信する。自分自身で送受信。
 
-UDP_image_demo.ipynb
+***UDP_image_demo.ipynb***
 
 
 テキストデータを受信する。pinggyでブリッジ。
