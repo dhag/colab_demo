@@ -36,6 +36,9 @@
 ***HTTP_flask_browser_ngrok.ipynb***
 
 ## API
+GeminiのAPIを使うサンプル。サンプル以前。
+***クイックAI.ipynb***
+
 GeminiのAPIを使うサンプル。他社もほぼ同等（だが無料枠がないものが多い）
 
 ***gemini_colab_quickstart.ipynb***
