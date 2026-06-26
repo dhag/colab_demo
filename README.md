@@ -35,6 +35,11 @@
 
 ***HTTP_flask_browser_ngrok.ipynb***
 
+
+ライブクリッカー（リアルタイム電子投票）。HTTPサーバ。ngrokでブリッジ
+
+***HTTP_live_clicker_ngrok.ipynb***
+
 ## API
 GeminiのAPIを使うサンプル。サンプル以前。
 
