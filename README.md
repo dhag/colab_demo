@@ -53,6 +53,10 @@ GeminiのAPIを使いこなすサンプル。Gemini固有の機能も。
 
 ***gemini_colab_advance.ipynb***
 
+MCPのごく簡単なデモ
+
+***gemini_colab_mcp_demo.ipynb***
+
 
 ## Web sock
 ごく簡単なエコーサーバ
