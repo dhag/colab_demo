@@ -29,7 +29,7 @@
 ## HTTP
 ごく簡単なHTTPサーバ。ngrokでブリッジ
 
-***HTTP_Flask+ngrokの例.ipynb***
+***HTTP_Flask_ngrokの例.ipynb***
 
 画像をアップロードして処理したものを受け取る簡単なHTTPサーバ。ngrokでブリッジ
 
