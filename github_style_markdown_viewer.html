@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub風 Markdown Viewer</title>
+
+  <!-- GitHub風Markdown CSS -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.8.1/github-markdown.min.css">
+
+  <!-- highlight.js -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github.min.css">
+
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP",
+        Helvetica, Arial, sans-serif;
+      background: #f6f8fa;
+      color: #1f2328;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: #24292f;
+      color: white;
+      box-shadow: 0 1px 4px rgba(0,0,0,.25);
+    }
+
+    .topbar .title {
+      font-weight: 700;
+      margin-right: auto;
+    }
+
+    .button {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 6px;
+      padding: 7px 12px;
+      background: #2da44e;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .button:hover {
+      background: #2c974b;
+    }
+
+    .filename {
+      max-width: 40vw;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      opacity: .9;
+      font-size: 14px;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    .drop-zone {
+      margin: 18px auto 0;
+      width: min(980px, calc(100% - 32px));
+      border: 2px dashed #8c959f;
+      border-radius: 10px;
+      padding: 14px 16px;
+      text-align: center;
+      background: white;
+      color: #57606a;
+      transition: .15s ease;
+    }
+
+    .drop-zone.dragover {
+      border-color: #0969da;
+      background: #ddf4ff;
+      color: #0969da;
+    }
+
+    .viewer-shell {
+      width: min(980px, calc(100% - 32px));
+      margin: 18px auto 48px;
+      background: white;
+      border: 1px solid #d0d7de;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(27,31,36,.08);
+      overflow: hidden;
+    }
+
+    .markdown-body {
+      padding: 32px;
+      min-height: 300px;
+    }
+
+    .markdown-body pre code {
+      white-space: pre;
+    }
+
+    .empty {
+      color: #6e7781;
+    }
+
+    .mermaid {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    @media (max-width: 640px) {
+      .markdown-body {
+        padding: 20px;
+      }
+
+      .filename {
+        display: none;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #0d1117;
+        color: #c9d1d9;
+      }
+
+      .drop-zone,
+      .viewer-shell {
+        background: #0d1117;
+        border-color: #30363d;
+      }
+
+      .drop-zone {
+        color: #8b949e;
+      }
+
+      .drop-zone.dragover {
+        background: #161b22;
+        color: #58a6ff;
+        border-color: #58a6ff;
+      }
+
+      .markdown-body {
+        color: #c9d1d9;
+        background: #0d1117;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="title">Markdown Viewer</div>
+    <div id="filename" class="filename">ファイル未選択</div>
+    <label class="button" for="fileInput">MDを開く</label>
+    <input id="fileInput" type="file"
+           accept=".md,.markdown,.txt,text/markdown,text/plain">
+  </header>
+
+  <div id="dropZone" class="drop-zone">
+    Markdownファイルをここへドラッグ＆ドロップ
+  </div>
+
+  <main class="viewer-shell">
+    <article id="viewer" class="markdown-body">
+      <h1>GitHub風 Markdown Viewer</h1>
+      <p class="empty">
+        上の「MDを開く」ボタン、またはドラッグ＆ドロップで
+        <code>.md</code> ファイルを読み込む。
+      </p>
+
+      <h2>表示例</h2>
+
+      <table>
+        <thead>
+          <tr><th>機能</th><th>対応</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>見出し・表・リスト</td><td>○</td></tr>
+          <tr><td>コード色付け</td><td>○</td></tr>
+          <tr><td>チェックボックス</td><td>○</td></tr>
+          <tr><td>Mermaid</td><td>○</td></tr>
+        </tbody>
+      </table>
+
+      <pre><code class="language-csharp">Console.WriteLine("Hello Markdown");</code></pre>
+    </article>
+  </main>
+
+  <!-- Markdown parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
+
+  <!-- syntax highlight -->
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/common.min.js"></script>
+
+  <!-- Mermaid -->
+  <script type="module">
+    import mermaid from
+      "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "default"
+    });
+
+    window.renderMermaid = async function () {
+      const blocks = document.querySelectorAll(
+        '#viewer pre code.language-mermaid'
+      );
+
+      blocks.forEach((code) => {
+        const pre = code.parentElement;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code.textContent;
+        pre.replaceWith(div);
+      });
+
+      if (document.querySelector('.mermaid')) {
+        await mermaid.run({
+          querySelector: '.mermaid'
+        });
+      }
+    };
+  </script>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const dropZone = document.getElementById("dropZone");
+    const viewer = document.getElementById("viewer");
+    const filename = document.getElementById("filename");
+
+    marked.setOptions({
+      gfm: true,
+      breaks: false
+    });
+
+    async function renderMarkdown(text, name = "") {
+      viewer.innerHTML = marked.parse(text);
+
+      viewer.querySelectorAll("pre code").forEach((block) => {
+        if (!block.classList.contains("language-mermaid")) {
+          hljs.highlightElement(block);
+        }
+      });
+
+      if (window.renderMermaid) {
+        try {
+          await window.renderMermaid();
+        } catch (err) {
+          console.error("Mermaid render error:", err);
+        }
+      }
+
+      filename.textContent = name || "Markdown";
+      document.title = name
+        ? name + " - Markdown Viewer"
+        : "Markdown Viewer";
+    }
+
+    function openFile(file) {
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = async () => {
+        await renderMarkdown(reader.result, file.name);
+      };
+
+      reader.onerror = () => {
+        viewer.innerHTML =
+          "<h2>読み込みエラー</h2><p>ファイルを読み込めなかった。</p>";
+      };
+
+      reader.readAsText(file, "UTF-8");
+    }
+
+    fileInput.addEventListener("change", (e) => {
+      openFile(e.target.files[0]);
+    });
+
+    ["dragenter", "dragover"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add("dragover");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove("dragover");
+      });
+    });
+
+    dropZone.addEventListener("drop", (e) => {
+      const file = e.dataTransfer.files[0];
+      openFile(file);
+    });
+
+    // ページ全体へのドロップでも動作
+    document.addEventListener("dragover", (e) => e.preventDefault());
+
+    document.addEventListener("drop", (e) => {
+      if (e.target === dropZone || dropZone.contains(e.target)) return;
+      e.preventDefault();
+
+      const file = e.dataTransfer.files[0];
+      openFile(file);
+    });
+
+    // 初期サンプルのコード色付け
+    document.querySelectorAll("pre code").forEach((block) => {
+      hljs.highlightElement(block);
+    });
+  </script>
+</body>
+</html>

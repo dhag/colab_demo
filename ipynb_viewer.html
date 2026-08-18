@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IPYNB Viewer</title>
+
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.8.1/github-markdown.min.css">
+
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github.min.css">
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP",
+        Helvetica, Arial, sans-serif;
+      background: #f6f8fa;
+      color: #1f2328;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: #24292f;
+      color: white;
+      box-shadow: 0 1px 4px rgba(0,0,0,.25);
+    }
+
+    .title {
+      font-weight: 700;
+      margin-right: auto;
+    }
+
+    .filename {
+      max-width: 44vw;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      opacity: .9;
+      font-size: 14px;
+    }
+
+    .button {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 6px;
+      padding: 7px 12px;
+      background: #2da44e;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .button:hover { background: #2c974b; }
+
+    #fileInput { display: none; }
+
+    .drop-zone {
+      margin: 18px auto 0;
+      width: min(1100px, calc(100% - 32px));
+      border: 2px dashed #8c959f;
+      border-radius: 10px;
+      padding: 14px 16px;
+      text-align: center;
+      background: white;
+      color: #57606a;
+      transition: .15s ease;
+    }
+
+    .drop-zone.dragover {
+      border-color: #0969da;
+      background: #ddf4ff;
+      color: #0969da;
+    }
+
+    .notebook {
+      width: min(1100px, calc(100% - 32px));
+      margin: 18px auto 48px;
+    }
+
+    .notebook-meta {
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      border: 1px solid #d0d7de;
+      border-radius: 8px;
+      background: white;
+      font-size: 13px;
+      color: #57606a;
+    }
+
+    .cell {
+      display: grid;
+      grid-template-columns: 78px minmax(0, 1fr);
+      margin: 0 0 12px 0;
+      align-items: start;
+    }
+
+    .prompt {
+      padding: 9px 10px 0 0;
+      text-align: right;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      color: #57606a;
+      user-select: none;
+    }
+
+    .cell-body {
+      min-width: 0;
+      border: 1px solid #d0d7de;
+      border-radius: 7px;
+      background: white;
+      overflow: hidden;
+    }
+
+    .markdown-cell .cell-body {
+      padding: 18px 22px;
+    }
+
+    .markdown-body {
+      max-width: none;
+      background: transparent;
+    }
+
+    .code-input {
+      position: relative;
+      background: #f6f8fa;
+    }
+
+    .code-input pre {
+      margin: 0;
+      padding: 14px 16px;
+      overflow-x: auto;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .code-input code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .outputs {
+      border-top: 1px solid #d8dee4;
+      background: #fff;
+    }
+
+    .output {
+      padding: 12px 16px;
+      overflow-x: auto;
+    }
+
+    .output + .output {
+      border-top: 1px dashed #d8dee4;
+    }
+
+    .output pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .output img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .output-html {
+      overflow-x: auto;
+    }
+
+    .raw-cell .cell-body {
+      padding: 14px 16px;
+      background: #fff8c5;
+    }
+
+    .raw-cell pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .empty {
+      padding: 28px;
+      border: 1px solid #d0d7de;
+      border-radius: 8px;
+      background: white;
+      color: #6e7781;
+    }
+
+    .error {
+      background: #ffebe9;
+      color: #82071e;
+    }
+
+    .stream-stderr {
+      color: #cf222e;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: #ddf4ff;
+      color: #0969da;
+      font-size: 12px;
+      margin-right: 6px;
+    }
+
+    @media (max-width: 720px) {
+      .cell {
+        grid-template-columns: 1fr;
+      }
+
+      .prompt {
+        text-align: left;
+        padding: 0 0 5px 4px;
+      }
+
+      .filename { display: none; }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #0d1117;
+        color: #c9d1d9;
+      }
+
+      .drop-zone,
+      .notebook-meta,
+      .cell-body,
+      .empty,
+      .outputs {
+        background: #0d1117;
+        border-color: #30363d;
+      }
+
+      .drop-zone { color: #8b949e; }
+
+      .drop-zone.dragover {
+        background: #161b22;
+        color: #58a6ff;
+        border-color: #58a6ff;
+      }
+
+      .markdown-body {
+        color: #c9d1d9;
+      }
+
+      .code-input {
+        background: #161b22;
+      }
+
+      .outputs {
+        border-top-color: #30363d;
+      }
+
+      .output + .output {
+        border-top-color: #30363d;
+      }
+
+      .prompt, .notebook-meta {
+        color: #8b949e;
+      }
+
+      .raw-cell .cell-body {
+        background: #2d2800;
+      }
+
+      .error {
+        background: #3d1117;
+        color: #ff7b72;
+      }
+
+      .badge {
+        background: #0c2d4a;
+        color: #58a6ff;
+      }
+    }
+  </style>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="title">IPYNB Viewer</div>
+    <div id="filename" class="filename">ファイル未選択</div>
+    <label class="button" for="fileInput">IPYNBを開く</label>
+    <input id="fileInput" type="file"
+           accept=".ipynb,application/json">
+  </header>
+
+  <div id="dropZone" class="drop-zone">
+    Jupyter Notebook（.ipynb）をここへドラッグ＆ドロップ
+  </div>
+
+  <main id="notebook" class="notebook">
+    <div class="empty">
+      <h2>IPYNB Viewer</h2>
+      <p>
+        Markdownセル、コードセル、保存済み出力、PNG/JPEG/SVG画像、
+        HTML出力、数式を表示する。
+      </p>
+      <p><strong>コードは実行しない。</strong></p>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/common.min.js"></script>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const dropZone = document.getElementById("dropZone");
+    const notebookEl = document.getElementById("notebook");
+    const filenameEl = document.getElementById("filename");
+
+    marked.setOptions({
+      gfm: true,
+      breaks: false
+    });
+
+    function sourceToText(source) {
+      if (Array.isArray(source)) return source.join("");
+      return source ?? "";
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function textFromMimeValue(v) {
+      if (Array.isArray(v)) return v.join("");
+      if (typeof v === "string") return v;
+      return JSON.stringify(v, null, 2);
+    }
+
+    function detectLanguage(nb) {
+      const meta = nb.metadata || {};
+      const lang =
+        meta.kernelspec?.language ||
+        meta.language_info?.name ||
+        "python";
+
+      const aliases = {
+        "python3": "python",
+        "py": "python",
+        "c#": "csharp",
+        "cs": "csharp",
+        "javascript": "javascript",
+        "js": "javascript"
+      };
+
+      return aliases[String(lang).toLowerCase()] || String(lang).toLowerCase();
+    }
+
+    function createMeta(nb, lang) {
+      const meta = nb.metadata || {};
+      const kernel = meta.kernelspec?.display_name || meta.kernelspec?.name || "不明";
+      const version = meta.language_info?.version || "";
+      const nbformat = nb.nbformat ?? "?";
+      const nbminor = nb.nbformat_minor ?? "?";
+
+      const div = document.createElement("div");
+      div.className = "notebook-meta";
+      div.innerHTML =
+        `<span class="badge">Notebook ${escapeHtml(nbformat)}.${escapeHtml(nbminor)}</span>` +
+        `<span class="badge">${escapeHtml(lang)}</span>` +
+        `Kernel: ${escapeHtml(kernel)}` +
+        (version ? ` / Version: ${escapeHtml(version)}` : "");
+
+      return div;
+    }
+
+    function renderMarkdownCell(cell) {
+      const row = document.createElement("section");
+      row.className = "cell markdown-cell";
+
+      const prompt = document.createElement("div");
+      prompt.className = "prompt";
+
+      const body = document.createElement("div");
+      body.className = "cell-body markdown-body";
+      body.innerHTML = marked.parse(sourceToText(cell.source));
+
+      row.append(prompt, body);
+      return row;
+    }
+
+    function renderRawCell(cell) {
+      const row = document.createElement("section");
+      row.className = "cell raw-cell";
+
+      const prompt = document.createElement("div");
+      prompt.className = "prompt";
+      prompt.textContent = "Raw";
+
+      const body = document.createElement("div");
+      body.className = "cell-body";
+
+      const pre = document.createElement("pre");
+      pre.textContent = sourceToText(cell.source);
+      body.appendChild(pre);
+
+      row.append(prompt, body);
+      return row;
+    }
+
+    function renderMimeOutput(data) {
+      const box = document.createElement("div");
+      box.className = "output";
+
+      if (data["image/png"]) {
+        const img = document.createElement("img");
+        img.src = "data:image/png;base64," + textFromMimeValue(data["image/png"]).replace(/\s/g, "");
+        box.appendChild(img);
+        return box;
+      }
+
+      if (data["image/jpeg"]) {
+        const img = document.createElement("img");
+        img.src = "data:image/jpeg;base64," + textFromMimeValue(data["image/jpeg"]).replace(/\s/g, "");
+        box.appendChild(img);
+        return box;
+      }
+
+      if (data["image/svg+xml"]) {
+        const div = document.createElement("div");
+        div.innerHTML = textFromMimeValue(data["image/svg+xml"]);
+        box.appendChild(div);
+        return box;
+      }
+
+      if (data["text/html"]) {
+        const div = document.createElement("div");
+        div.className = "output-html";
+        div.innerHTML = textFromMimeValue(data["text/html"]);
+        box.appendChild(div);
+        return box;
+      }
+
+      if (data["text/markdown"]) {
+        const div = document.createElement("div");
+        div.className = "markdown-body";
+        div.innerHTML = marked.parse(textFromMimeValue(data["text/markdown"]));
+        box.appendChild(div);
+        return box;
+      }
+
+      if (data["application/json"]) {
+        const pre = document.createElement("pre");
+        pre.textContent = textFromMimeValue(data["application/json"]);
+        box.appendChild(pre);
+        return box;
+      }
+
+      if (data["text/plain"] !== undefined) {
+        const pre = document.createElement("pre");
+        pre.textContent = textFromMimeValue(data["text/plain"]);
+        box.appendChild(pre);
+        return box;
+      }
+
+      const pre = document.createElement("pre");
+      pre.textContent = JSON.stringify(data, null, 2);
+      box.appendChild(pre);
+      return box;
+    }
+
+    function renderOutput(output) {
+      if (output.output_type === "stream") {
+        const box = document.createElement("div");
+        box.className = "output";
+        if (output.name === "stderr") {
+          box.classList.add("stream-stderr");
+        }
+        const pre = document.createElement("pre");
+        pre.textContent = sourceToText(output.text);
+        box.appendChild(pre);
+        return box;
+      }
+
+      if (output.output_type === "error") {
+        const box = document.createElement("div");
+        box.className = "output error";
+        const pre = document.createElement("pre");
+        const tb = Array.isArray(output.traceback)
+          ? output.traceback.join("\n")
+          : `${output.ename || "Error"}: ${output.evalue || ""}`;
+        pre.textContent = tb.replace(/\x1b\[[0-9;]*m/g, "");
+        box.appendChild(pre);
+        return box;
+      }
+
+      if (output.output_type === "display_data" ||
+          output.output_type === "execute_result") {
+        return renderMimeOutput(output.data || {});
+      }
+
+      const box = document.createElement("div");
+      box.className = "output";
+      const pre = document.createElement("pre");
+      pre.textContent = JSON.stringify(output, null, 2);
+      box.appendChild(pre);
+      return box;
+    }
+
+    function renderCodeCell(cell, lang) {
+      const row = document.createElement("section");
+      row.className = "cell code-cell";
+
+      const prompt = document.createElement("div");
+      prompt.className = "prompt";
+      const count = cell.execution_count;
+      prompt.textContent = count == null ? "In [ ]:" : `In [${count}]:`;
+
+      const body = document.createElement("div");
+      body.className = "cell-body";
+
+      const input = document.createElement("div");
+      input.className = "code-input";
+
+      const pre = document.createElement("pre");
+      const code = document.createElement("code");
+      code.className = `language-${lang}`;
+      code.textContent = sourceToText(cell.source);
+      pre.appendChild(code);
+      input.appendChild(pre);
+      body.appendChild(input);
+
+      if (Array.isArray(cell.outputs) && cell.outputs.length) {
+        const outputs = document.createElement("div");
+        outputs.className = "outputs";
+        cell.outputs.forEach(out => outputs.appendChild(renderOutput(out)));
+        body.appendChild(outputs);
+      }
+
+      row.append(prompt, body);
+      return row;
+    }
+
+    async function renderNotebook(nb, name) {
+      notebookEl.innerHTML = "";
+
+      const lang = detectLanguage(nb);
+      notebookEl.appendChild(createMeta(nb, lang));
+
+      const cells = Array.isArray(nb.cells) ? nb.cells : [];
+
+      if (!cells.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "セルがないNotebookである。";
+        notebookEl.appendChild(empty);
+      }
+
+      for (const cell of cells) {
+        if (cell.cell_type === "markdown") {
+          notebookEl.appendChild(renderMarkdownCell(cell));
+        } else if (cell.cell_type === "code") {
+          notebookEl.appendChild(renderCodeCell(cell, lang));
+        } else {
+          notebookEl.appendChild(renderRawCell(cell));
+        }
+      }
+
+      notebookEl.querySelectorAll("pre code").forEach(block => {
+        try {
+          hljs.highlightElement(block);
+        } catch (_) {}
+      });
+
+      if (window.MathJax?.typesetPromise) {
+        try {
+          await MathJax.typesetPromise([notebookEl]);
+        } catch (e) {
+          console.warn("MathJax:", e);
+        }
+      }
+
+      filenameEl.textContent = name || "Notebook";
+      document.title = name ? `${name} - IPYNB Viewer` : "IPYNB Viewer";
+    }
+
+    function openFile(file) {
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = async () => {
+        try {
+          const nb = JSON.parse(reader.result);
+          await renderNotebook(nb, file.name);
+        } catch (err) {
+          notebookEl.innerHTML =
+            `<div class="empty error"><h2>読み込みエラー</h2>` +
+            `<p>${escapeHtml(err.message)}</p></div>`;
+        }
+      };
+
+      reader.onerror = () => {
+        notebookEl.innerHTML =
+          `<div class="empty error">ファイルを読み込めなかった。</div>`;
+      };
+
+      reader.readAsText(file, "UTF-8");
+    }
+
+    fileInput.addEventListener("change", e => {
+      openFile(e.target.files[0]);
+    });
+
+    ["dragenter", "dragover"].forEach(name => {
+      dropZone.addEventListener(name, e => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add("dragover");
+      });
+    });
+
+    ["dragleave", "drop"].forEach(name => {
+      dropZone.addEventListener(name, e => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove("dragover");
+      });
+    });
+
+    dropZone.addEventListener("drop", e => {
+      openFile(e.dataTransfer.files[0]);
+    });
+
+    document.addEventListener("dragover", e => e.preventDefault());
+
+    document.addEventListener("drop", e => {
+      if (e.target === dropZone || dropZone.contains(e.target)) return;
+      e.preventDefault();
+      openFile(e.dataTransfer.files[0]);
+    });
+  </script>
+</body>
+</html>
