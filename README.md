@@ -1,9 +1,9 @@
 # 便利ツール
-## .ipynbファイルをちょっと見たいとき
+.ipynbファイルをちょっと見たいとき
 
 ***ipynb_viewer.html***
 
-## .ipynbファイルをちょっと見たいとき
+.ipynbファイルをちょっと見たいとき
 
 ***github_style_markdown_viewer.html***
 
