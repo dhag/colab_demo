@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub風 Markdown Editor</title>
+
+  <!-- GitHub風Markdown CSS -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.8.1/github-markdown.min.css">
+
+  <!-- highlight.js -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github.min.css">
+
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP",
+        Helvetica, Arial, sans-serif;
+      background: #f6f8fa;
+      color: #1f2328;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: #24292f;
+      color: white;
+      box-shadow: 0 1px 4px rgba(0,0,0,.25);
+    }
+
+    .topbar { flex-wrap: wrap; }
+    .topbar .title {
+      font-weight: 700;
+      margin-right: auto;
+    }
+
+    .button {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 6px;
+      padding: 7px 12px;
+      background: #2da44e;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .button:hover {
+      background: #2c974b;
+    }
+
+    .button.secondary { background: #45515e; }
+    .button:disabled { opacity: .5; cursor: default; }
+    .filename {
+      max-width: 40vw;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      opacity: .9;
+      font-size: 14px;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    .drop-zone {
+      margin: 18px auto 0;
+      width: min(980px, calc(100% - 32px));
+      border: 2px dashed #8c959f;
+      border-radius: 10px;
+      padding: 14px 16px;
+      text-align: center;
+      background: white;
+      color: #57606a;
+      transition: .15s ease;
+    }
+
+    .drop-zone.dragover {
+      border-color: #0969da;
+      background: #ddf4ff;
+      color: #0969da;
+    }
+
+    .viewer-shell {
+      width: min(980px, calc(100% - 32px));
+      margin: 18px auto 48px;
+      background: white;
+      border: 1px solid #d0d7de;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(27,31,36,.08);
+      overflow: hidden;
+    }
+
+    #editor { display: none; min-height: 480px; }
+    .edit-toolbar { display: flex; flex-wrap: wrap; gap: 5px; padding: 10px; border-bottom: 1px solid #d0d7de; }
+    .edit-toolbar button { border: 1px solid #d0d7de; background: #f6f8fa; color: #24292f; padding: 6px 9px; border-radius: 5px; cursor: pointer; }
+    #visualEditor { min-height: 480px; outline: none; }
+    #sourceEditor { display: none; width: 100%; min-height: 540px; padding: 24px; border: 0; outline: none; resize: vertical; font: 14px/1.6 Consolas, monospace; }
+    #editor.source-mode #visualEditor { display: none; }
+    #editor.source-mode #sourceEditor { display: block; }
+    .viewer-shell.editing #editor { display: block; }
+    .viewer-shell.editing #viewer { display: none; }
+    .editor-help { display: none; padding: 10px 18px; border-bottom: 1px solid #d0d7de; font-size: 13px; color: #57606a; }
+    .viewer-shell.editing .editor-help { display: block; }
+    .markdown-body {
+      padding: 32px;
+      min-height: 300px;
+    }
+
+    .markdown-body pre code {
+      white-space: pre;
+    }
+
+    .empty {
+      color: #6e7781;
+    }
+
+    .mermaid {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    @media (max-width: 640px) {
+      .markdown-body {
+        padding: 20px;
+      }
+
+      .button.secondary { background: #45515e; }
+    .button:disabled { opacity: .5; cursor: default; }
+    .filename {
+        display: none;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #0d1117;
+        color: #c9d1d9;
+      }
+
+      .drop-zone,
+      .viewer-shell {
+        background: #0d1117;
+        border-color: #30363d;
+      }
+
+      .drop-zone {
+        color: #8b949e;
+      }
+
+      .drop-zone.dragover {
+        background: #161b22;
+        color: #58a6ff;
+        border-color: #58a6ff;
+      }
+
+      .markdown-body {
+        color: #c9d1d9;
+        background: #0d1117;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="title">Markdown Editor（オフライン編集版 v3）</div>
+    <div id="filename" class="filename">ファイル未選択</div>
+    <button id="newButton" class="button secondary" type="button">新規</button>
+    <label class="button" for="fileInput">MDを開く</label>
+    <button id="editButton" class="button secondary" type="button">編集する</button>
+    <button id="saveButton" class="button" type="button">MDを保存</button>
+    <input id="fileInput" type="file"
+           accept=".md,.markdown,.txt,text/markdown,text/plain">
+  </header>
+
+  <div id="dropZone" class="drop-zone">
+    Markdownファイルをここへドラッグ＆ドロップ
+  </div>
+
+  <main id="shell" class="viewer-shell">
+    <div class="editor-help">見たまま編集とMarkdown直接編集を切り替えられます。画像はURLを指定できます。</div>
+    <div id="editor">
+      <div class="edit-toolbar">
+        <button type="button" data-command="formatBlock" data-value="h1">見出し1</button>
+        <button type="button" data-command="formatBlock" data-value="h2">見出し2</button>
+        <button type="button" data-command="bold">太字</button>
+        <button type="button" data-command="italic">斜体</button>
+        <button type="button" data-command="insertUnorderedList">箇条書き</button>
+        <button type="button" data-command="insertOrderedList">番号付き</button>
+        <button type="button" id="linkButton">リンク</button>
+        <button type="button" id="imageButton">画像URL</button>
+        <button type="button" id="modeButton">Markdownを直接編集</button>
+      </div>
+      <div id="visualEditor" class="markdown-body" contenteditable="true" aria-label="見たまま編集"></div>
+      <textarea id="sourceEditor" aria-label="Markdownを直接編集"></textarea>
+    </div>
+    <article id="viewer" class="markdown-body">
+      <h1>GitHub風 Markdown Viewer</h1>
+      <p class="empty">
+        上の「MDを開く」ボタン、またはドラッグ＆ドロップで
+        <code>.md</code> ファイルを読み込む。
+      </p>
+
+      <h2>表示例</h2>
+
+      <table>
+        <thead>
+          <tr><th>機能</th><th>対応</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>見出し・表・リスト</td><td>○</td></tr>
+          <tr><td>コード色付け</td><td>○</td></tr>
+          <tr><td>チェックボックス</td><td>○</td></tr>
+          <tr><td>Mermaid</td><td>○</td></tr>
+        </tbody>
+      </table>
+
+      <pre><code class="language-csharp">Console.WriteLine("Hello Markdown");</code></pre>
+    </article>
+  </main>
+
+  <!-- Markdown parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
+
+  <!-- syntax highlight -->
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/common.min.js"></script>
+
+  <!-- Mermaid -->
+  <script type="module">
+    import mermaid from
+      "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "default"
+    });
+
+    window.renderMermaid = async function () {
+      const blocks = document.querySelectorAll(
+        '#viewer pre code.language-mermaid'
+      );
+
+      blocks.forEach((code) => {
+        const pre = code.parentElement;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = code.textContent;
+        pre.replaceWith(div);
+      });
+
+      if (document.querySelector('.mermaid')) {
+        await mermaid.run({
+          querySelector: '.mermaid'
+        });
+      }
+    };
+  </script>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const dropZone = document.getElementById("dropZone");
+    const viewer = document.getElementById("viewer");
+    const filename = document.getElementById("filename");
+    const shell = document.getElementById("shell");
+    const editButton = document.getElementById("editButton");
+    const saveButton = document.getElementById("saveButton");
+    let markdown = "";
+    let currentName = "新規文書.md";
+    let editorDirty = false;
+    let editing = false;
+
+    const editorBox = document.getElementById("editor");
+    const visualEditor = document.getElementById("visualEditor");
+    const sourceEditor = document.getElementById("sourceEditor");
+    const modeButton = document.getElementById("modeButton");
+    let sourceMode = false;
+
+    function escapeHtml(value) {
+      return value.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function escapeMd(value) { return value.replace(/([\\`*_{}\[\]<>])/g, "\\$1"); }
+    function inlineMarkdown(node) {
+      if (node.nodeType === Node.TEXT_NODE) return escapeMd(node.nodeValue);
+      if (node.nodeType !== Node.ELEMENT_NODE) return "";
+      const tag = node.tagName.toLowerCase();
+      const content = [...node.childNodes].map(inlineMarkdown).join("");
+      if (tag === "strong" || tag === "b") return `**${content}**`;
+      if (tag === "em" || tag === "i") return `*${content}*`;
+      if (tag === "code") return `\`${node.textContent.replace(/`/g, "\\`")}\``;
+      if (tag === "a") return `[${content}](${node.getAttribute("href") || ""})`;
+      if (tag === "img") return `![${node.getAttribute("alt") || ""}](${node.getAttribute("src") || ""})`;
+      if (tag === "br") return "  \n";
+      return content;
+    }
+    function blocksToMarkdown(parent) {
+      return [...parent.childNodes].map(node => {
+        if (node.nodeType === Node.TEXT_NODE) return node.textContent.trim() ? escapeMd(node.textContent) + "\n\n" : "";
+        if (node.nodeType !== Node.ELEMENT_NODE) return "";
+        const tag = node.tagName.toLowerCase();
+        if (/^h[1-6]$/.test(tag)) return "#".repeat(+tag[1]) + " " + inlineMarkdown(node).trim() + "\n\n";
+        if (tag === "pre") {
+          const code = node.querySelector("code") || node;
+          const lang = [...code.classList].find(x => x.startsWith("language-"))?.slice(9) || "";
+          return `\n\`\`\`${lang}\n${code.textContent.replace(/\n$/, "")}\n\`\`\`\n\n`;
+        }
+        if (tag === "ul" || tag === "ol") return [...node.children].map((li, i) => {
+          const checkbox = li.querySelector('input[type="checkbox"]');
+          const copy = li.cloneNode(true);
+          copy.querySelectorAll('input[type="checkbox"]').forEach(x => x.remove());
+          const marker = tag === "ol" ? `${i + 1}. ` : "- ";
+          return marker + (checkbox ? `[${checkbox.checked ? "x" : " "}] ` : "") + inlineMarkdown(copy).trim();
+        }).join("\n") + "\n\n";
+        if (tag === "blockquote") return blocksToMarkdown(node).trim().split("\n").map(line => "> " + line).join("\n") + "\n\n";
+        if (tag === "table") {
+          const rows = [...node.querySelectorAll("tr")].map(row => [...row.querySelectorAll("th,td")].map(cell => inlineMarkdown(cell).trim().replace(/\|/g, "\\|")));
+          if (!rows.length) return "";
+          const width = rows[0].length;
+          return [rows[0], Array(width).fill("---"), ...rows.slice(1)].map(row => "| " + row.join(" | ") + " |").join("\n") + "\n\n";
+        }
+        if (tag === "hr") return "---\n\n";
+        if (tag === "p" || tag === "div") return inlineMarkdown(node).trim() + "\n\n";
+        return inlineMarkdown(node).trim() + "\n\n";
+      }).join("").trim() + "\n";
+    }
+    function simpleHtml(md) {
+      return md.split(/\n\s*\n/).map(part => {
+        if (/^#{1,6} /.test(part)) { const match = /^(#{1,6}) (.*)/s.exec(part); return `<h${match[1].length}>${escapeHtml(match[2])}</h${match[1].length}>`; }
+        return `<p>${escapeHtml(part).replace(/\n/g, "<br>")}</p>`;
+      }).join("");
+    }
+    function setEditorMarkdown(value) {
+      editorDirty = false;
+      sourceEditor.value = value;
+      visualEditor.innerHTML = window.marked ? marked.parse(value) : simpleHtml(value);
+    }
+    function getEditorMarkdown() {
+      return editorDirty ? (sourceMode ? sourceEditor.value : blocksToMarkdown(visualEditor)) : markdown;
+    }
+    function focusEditor() { (sourceMode ? sourceEditor : visualEditor).focus(); }
+    document.querySelectorAll(".edit-toolbar [data-command]").forEach(button => button.addEventListener("click", () => {
+      if (sourceMode) return;
+      visualEditor.focus();
+      document.execCommand(button.dataset.command, false, button.dataset.value || null);
+      editorDirty = true;
+    }));
+    document.getElementById("linkButton").addEventListener("click", () => {
+      if (sourceMode) return;
+      const url = prompt("リンク先URLを入力してください");
+      if (url) { document.execCommand("createLink", false, url); editorDirty = true; }
+    });
+    document.getElementById("imageButton").addEventListener("click", () => {
+      if (sourceMode) return;
+      const url = prompt("画像URLを入力してください");
+      if (url) { document.execCommand("insertImage", false, url); editorDirty = true; }
+    });
+    visualEditor.addEventListener("input", () => { editorDirty = true; });
+    sourceEditor.addEventListener("input", () => { editorDirty = true; });
+    modeButton.addEventListener("click", () => {
+      if (!sourceMode) {
+        sourceEditor.value = editorDirty ? blocksToMarkdown(visualEditor) : markdown;
+        sourceMode = true;
+        editorBox.classList.add("source-mode");
+        modeButton.textContent = "見たまま編集";
+      } else {
+        visualEditor.innerHTML = window.marked ? marked.parse(sourceEditor.value) : simpleHtml(sourceEditor.value);
+        sourceMode = false;
+        editorBox.classList.remove("source-mode");
+        modeButton.textContent = "Markdownを直接編集";
+      }
+      focusEditor();
+    });
+
+    async function setEditing(enabled) {
+      if (enabled) {
+        setEditorMarkdown(markdown);
+        shell.classList.add("editing");
+        editing = true;
+        editButton.textContent = "プレビューに戻る";
+        focusEditor();
+      } else {
+        markdown = getEditorMarkdown();
+        editing = false;
+        shell.classList.remove("editing");
+        editButton.textContent = "編集する";
+        await renderMarkdown(markdown, currentName);
+      }
+    }
+
+    editButton.addEventListener("click", () => setEditing(!editing));
+    saveButton.addEventListener("click", () => {
+      if (editing) markdown = getEditorMarkdown();
+      const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = /\.(md|markdown)$/i.test(currentName) ? currentName : currentName.replace(/\.[^.]+$/, "") + ".md";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+    document.getElementById("newButton").addEventListener("click", async () => {
+      if (editing) markdown = getEditorMarkdown();
+      if (markdown && !confirm("現在の内容を破棄して新規作成しますか？")) return;
+      markdown = "";
+      currentName = "新規文書.md";
+      filename.textContent = currentName;
+      if (editing) setEditorMarkdown("");
+      else await renderMarkdown("", currentName);
+    });
+
+    if (window.marked) marked.setOptions({
+      gfm: true,
+      breaks: false
+    });
+
+    async function renderMarkdown(text, name = "") {
+      viewer.innerHTML = window.marked ? marked.parse(text) : simpleHtml(text);
+
+      viewer.querySelectorAll("pre code").forEach((block) => {
+        if (!block.classList.contains("language-mermaid")) {
+          if (window.hljs) hljs.highlightElement(block);
+        }
+      });
+
+      if (window.renderMermaid) {
+        try {
+          await window.renderMermaid();
+        } catch (err) {
+          console.error("Mermaid render error:", err);
+        }
+      }
+
+      filename.textContent = name || "Markdown";
+      document.title = name
+        ? name + " - Markdown Viewer"
+        : "Markdown Viewer";
+    }
+
+    function openFile(file) {
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = async () => {
+        markdown = String(reader.result);
+        currentName = file.name;
+        filename.textContent = currentName;
+        if (editing) setEditorMarkdown(markdown);
+        else await renderMarkdown(markdown, currentName);
+      };
+
+      reader.onerror = () => {
+        viewer.innerHTML =
+          "<h2>読み込みエラー</h2><p>ファイルを読み込めなかった。</p>";
+      };
+
+      reader.readAsText(file, "UTF-8");
+    }
+
+    fileInput.addEventListener("change", (e) => {
+      openFile(e.target.files[0]);
+      e.target.value = "";
+    });
+
+    ["dragenter", "dragover"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add("dragover");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove("dragover");
+      });
+    });
+
+    dropZone.addEventListener("drop", (e) => {
+      const file = e.dataTransfer.files[0];
+      if (file) openFile(file);
+    });
+
+    // ページ全体へのドロップでも動作
+    document.addEventListener("dragover", (e) => e.preventDefault());
+
+    document.addEventListener("drop", (e) => {
+      if (e.target === dropZone || dropZone.contains(e.target)) return;
+      e.preventDefault();
+
+      const file = e.dataTransfer.files[0];
+      if (file) openFile(file);
+    });
+
+    // 初期サンプルのコード色付け
+    document.querySelectorAll("pre code").forEach((block) => {
+      if (window.hljs) hljs.highlightElement(block);
+    });
+  </script>
+</body>
+</html>
