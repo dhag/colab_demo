@@ -3,9 +3,10 @@
 
 ***ipynb_viewer.html***
 
-.ipynbファイルをちょっと見たいとき
+.mdファイルをちょっと見たいとき
 
 ***github_style_markdown_viewer.html***
+***github_markdown_editor_offline_v3.html***
 
 # colab_demo　デジタル通信用
 
